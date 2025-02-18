@@ -69,6 +69,20 @@ class Nim():
         if all(pile == 0 for pile in self.piles):
             self.winner = self.player
 
+def available_actions(piles):
+        """
+        NimAi.available_actions(piles) takes a `piles` list as input
+        and returns all of the available actions `(i, j)` in that state.
+
+        Action `(i, j)` represents the action of removing `j` items
+        from pile `i` (where piles are 0-indexed).
+        """
+        actions = set()
+        for i, pile in enumerate(piles):
+            for j in range(1, pile + 1):
+                actions.add((i, j))
+        return actions
+
 
 class NimAI():
 
@@ -85,7 +99,7 @@ class NimAI():
         self.q = dict()
         self.alpha = alpha
         self.epsilon = epsilon
-
+        
     def update(self, old_state, action, new_state, reward):
         """
         Update Q-learning model, given an old state, an action taken
@@ -137,10 +151,7 @@ class NimAI():
         Q-value in `self.q`. If there are no available actions in
         `state`, return 0.
         """
-        actions = set()
-        for i, pile in enumerate(state):
-            for j in range(1, pile + 1):
-                actions.add((i, j))
+        actions = available_actions(state)
         
         # No actions avaliable
         if len(actions) == 0:
@@ -170,7 +181,28 @@ class NimAI():
         If multiple actions have the same Q-value, any of those
         options is an acceptable return value.
         """
-        raise NotImplementedError
+        possible_actions = available_actions(state)
+        best_action = possible_actions.pop()
+        
+        if len(possible_actions) == 0:
+            return best_action
+        
+        if epsilon:
+            if self.epsilon >= random.random():
+                possible_actions.add(best_action)
+                return random.choice(list(possible_actions))
+            else:
+                best_action = best_action, self.get_q_value(state, best_action)
+                for action in possible_actions:
+                    if self.get_q_value(state, action) > best_action[1]:
+                        best_action = action, self.get_q_value(state, action)
+                return best_action[0]
+        else:
+            best_action = best_action, self.get_q_value(state, best_action)
+            for action in possible_actions:
+                if self.get_q_value(state, action) > best_action[1]:
+                    best_action = action, self.get_q_value(state, action)
+            return best_action[0]
 
 
 def train(n):
